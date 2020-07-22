@@ -1,0 +1,263 @@
+
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <title>Alphabet Starwars</title>
+    <script type="text/javascript"
+            src = "js/simpleGame.js"></script>
+    <script type="text/javascript">
+    
+    //game sprites
+    var scene;
+    var ship;
+    var letter;
+    var asteroids;
+    var space;
+    var missile;
+    var randLetter;
+
+    //sounds
+    var missalMp3;
+    var backgroundMp3;
+    var hitMp3;
+    var randMp3;
+
+    //constants
+    var SPACE_SPEED = 10;
+    var NUM_ASTEROIDS = 3;
+    var HITS = 0;
+    var LIFE = 2;
+
+    //var tShip;
+    function Ship(){
+        tShip = new Sprite(scene, "img/x-wingSmallVersion.png", 50, 50);
+        tShip.setSpeed(0);
+        tShip.setPosition()     
+        tShip.followMouse = function(){
+            this.setPosition(scene.getMouseX(), 500);
+        }
+        
+        // press space to fire missile 
+        tShip.checkKeys = function(){
+            if (keysDown[K_SPACE]){
+                missile.fire();
+                // for debug
+                console.log("fire...");
+            }    
+        } // end checkKeys
+
+        return tShip;
+    } // end ship constructor
+
+    function Missile(){
+        tMissile = new Sprite(scene, "img/missile.png", 30, 20);
+        tMissile.hide();
+        
+        tMissile.fire = function(){
+            this.show();
+            this.setSpeed(15);
+            this.setBoundAction(DIE);
+            this.setPosition(ship.x, ship.y);
+            this.setAngle(0);
+            this.setSpeed(15);
+        } // end fire
+            
+            return tMissile;
+    } // end missile fun
+
+    
+    function Letter(){
+        var randImage;
+        tLetter = new Sprite(scene, "img/0.gif", 100, 100);
+
+        // get random images
+        function randomImage (){
+            randNum = Math.floor(Math.random() * 132);
+            console.log(randNum);
+            randLetter = new Sound("sound/"+randNum+".mp3");
+            randImage = "img/"+randNum+".png";
+            
+        
+        } // end randomImage fun
+        
+        tLetter.reset = function(){
+            this.setDY(SPACE_SPEED);
+            this.setDX(0);
+            newX = Math.random() * scene.width;
+            this.setPosition(newX, 50);
+            this.Sprite;
+            randomImage();
+            tLetter.imgRand = randImage;
+            this.setImage(this.imgRand);
+        } // end reset
+       
+        tLetter.checkBounds = function(){
+            if (this.y > scene.height){
+                this.reset();
+            } // end if
+        } // end checkBounds
+        
+        tLetter.reset();
+        
+        return tLetter;
+    } // end letter
+
+
+    function Astreroid(){
+        tAstreroid = new Sprite(scene, "img/asteroid-small-4.gif", 50, 50);
+        
+        tAstreroid.reset = function(){
+            this.setDY((Math.random() * SPACE_SPEED) + 5);
+            this.setDX((Math.random() * 10) - 5);
+            newX = Math.random() * scene.width;
+            this.setPosition(newX, 50);
+        } // end reset
+        
+        tAstreroid.checkBounds = function(){
+            if (this.y > scene.height){
+                this.reset();
+            } // end if
+        } // end checkBounds
+        
+        tAstreroid.reset();
+        
+        return tAstreroid;
+    } // end astreroid 
+    
+    function makeAsteroids(){
+        asteroids = new Array(NUM_ASTEROIDS);
+        for (i = 0; i < NUM_ASTEROIDS; i++){
+            asteroids[i] = new Astreroid();
+        } // end for
+    } // end makeAsteroids
+    
+    function updateAsteroids(){
+        for (i = 0; i < NUM_ASTEROIDS; i++){
+            asteroids[i].update();
+        } // end for
+    } // end updateAsteroids
+    
+    function Space(){
+        tSpace = new Sprite(scene, "img/sprite_effects_stages_0008.png", 800, 1440);
+        tSpace.setDX(0);
+        tSpace.setDY(SPACE_SPEED);
+        tSpace.setPosition(400, 0);
+        
+        
+        tSpace.checkBounds = function(){
+            //seamless space gif repeats
+            if (this.y > 720){
+                this.setPosition(400, -120)
+            } // end if
+        } // end checkBounds
+        
+        
+        return tSpace;
+    } // end space
+
+    buildSounds = function(){
+        hitMp3 = new Sound("sound/smallexplosion3.mp3");
+        missalMp3 = new Sound("sound/tos_hullhit_1.mp3");
+        backgroundMp3 = new Sound("sound/ds9_infirmary.mp3");
+    } // end buildSounds
+    
+    function checkCollisions(){
+        //ship on letter
+        if (ship.collidesWith(letter)){
+            randLetter.play();
+            letter.reset();
+            LIFE += 1;
+            updateScore();
+        } // end if
+        
+        //ship on asteriod
+        for (i = 0; i < NUM_ASTEROIDS; i++){
+            if (ship.collidesWith(asteroids[i])){
+
+                hitMp3.play();
+                asteroids[i].reset();
+                LIFE -= 1;
+                updateScore();
+            } // end if
+        } // end for
+
+        // missile with ship
+        for (i = 0; i < NUM_ASTEROIDS; i++){
+            if (missile.collidesWith(asteroids[i])){
+                console.log("boom...")
+                missalMp3.play();
+                asteroids[i].reset();
+                HITS += 1;
+                updateScore();
+            } // end if
+        } // end for
+
+        function updateScore(){
+            //update the scoreboard
+            scoreBoard.innerHTML = "Hits: " + HITS + " Life: " + LIFE;
+
+            // check if you still got LIFE
+            if (LIFE <= 0){
+                console.log("alert was clicked")
+                alert("you got 0 LIFE, click to play again")
+                document.location.href = "";
+
+            } // end LIFE ;)
+            
+        } // end updateScore
+
+    } // end checkCollisions
+    
+ 
+    function init(){
+      
+        scene = new Scene();
+        missile = new Missile();
+        scene.hideCursor();
+        
+        buildSounds();
+      
+        ship = new Ship();
+        letter = new Letter();
+
+        makeAsteroids();
+        space = new Space();
+        
+        scene.start();
+    }  // end init
+    
+    function update(){
+
+        backgroundMp3.play();
+        
+        scene.clear();
+        
+        ship.followMouse();
+        
+        checkCollisions();
+        
+        space.update();
+        letter.update();
+        ship.checkKeys();
+        
+        ship.update();
+        missile.update();
+        updateAsteroids();
+      
+
+    } // end update();
+    
+    </script>
+</head>
+<body onload = "init()">
+    <div id = "scoreBoard">
+        <script>
+            scoreBoard.innerHTML = "Hits: " + HITS + " Life: " + LIFE;
+        </script>
+    </div>
+    <div id = "Reset Game">
+        <button onclick="location.reload();">Reset Game</button>
+    </div>
+</body>
+</html>
